@@ -1,0 +1,50 @@
+---
+title: "Mus Musculus Statistics Challenge"
+author: "Darren Liu"
+date: "2022-09-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(lubridate)
+```
+
+## Our approach
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To begin, we first selected only for locations in North America on 03/28/2020 since 
+North America is the most interesting location and March 28th is the most interesting day.We then found the amount of times the letter 'a' appeared in each location. To better understand our data, we then took the natural logarithm of the amount of new cases (1 was added in order to prevent log(0)). Finally, all outliers were tactfully removed (rows with 1.5 < log(new_cases + 1) < 5 were omitted). We then took the Pearson coefficient between the count of the letter 'a' in the location as our indenpendent variable and the natural log of the new cases for that given location as our dependent variable. We found there to be a strong correlation between the number of 'a's and the amount of new COVID cases with a p-value = 0.02014
+
+\*Editor's note: This is entire paragraph is **very** sarcastic
+
+```{r model}
+#read the Dataset sheet into “R”. The dataset will be called "data".
+df <- read.csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",
+                 na.strings = "",header=T)
+df <- filter(df, continent == 'North America')
+df <- filter(df, date == ymd('2020-03-28'))
+
+df <- df %>% mutate(num_a = str_count(tolower(location),'a'))
+
+
+
+
+df <- df %>% mutate(lnew_cases = log(new_cases+1))
+
+df <-df %>% filter(lnew_cases < 5)
+df <-df %>% filter(lnew_cases > 1.5)
+model <- cor.test(df$num_a, df$lnew_cases)
+model
+fit = coef(model)
+
+ggplot(df) + aes(x = num_a, y = log(new_cases+1)) + geom_point() + labs(x = 'Number of a', y = 'log(new_cases + 1)')
+
+```
+
+## Statistical Criticism
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To start with, it should be fairly obvious that there is no true correlation between the amount of 'a's in a location and the amount of COVID infections on any particular day. In order to get the 'significant' result, the data was manipulated in several different ways. For instance, the selection of only North America and the date (03/28/2020) is completely arbitrary and was largely done to reduce the sample size. From this selection, the data was graphed and there was a very weak negative correlation. In order to gain a significant result, points that did not follow this negative correlation was classified as 'outliers' and removed. The cherry-picking of the data allowed us to reduce the sample size (N = 11) to a point where we could find a spurious correlation. 
